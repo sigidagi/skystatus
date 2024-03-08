@@ -1,0 +1,12 @@
+[Unit]
+Description=Check - Build - Test - status indicator
+Documentation=https://skyaalborg.io/skystatus
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=%h/bin/skystatus
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
