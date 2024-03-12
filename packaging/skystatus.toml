@@ -1,2 +1,7 @@
 [device]
-tty = "/dev/ttyACM1"
+name = "/dev/ttyACM1"
+baud = 9600
+[project]
+directory = "/home/sigis/dev/lenticular/immerse-ui/core-app.feat"
+preset = "sigis-debug"
+cores = 12

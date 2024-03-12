@@ -4,16 +4,29 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sigidagi/skystatus/internal/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/tarm/serial"
 )
 
-func lightUp(port *serial.Port, led, color string) {
+type Device struct {
+	Port *serial.Port
+	Tty  string
+	Boud int
+}
+
+var device Device
+
+func New() *Device {
+	return &device
+}
+
+func (device Device) LightUp(led, color string) {
 
 	dataToSend := fmt.Sprintf("%s_%s", led, color)
 	bytesToSend := []byte(dataToSend)
 
-	_, err := port.Write(bytesToSend)
+	_, err := device.Port.Write(bytesToSend)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -21,53 +34,49 @@ func lightUp(port *serial.Port, led, color string) {
 	fmt.Println("Has send " + dataToSend)
 }
 
-func Run() error {
+func blinkTest(dev *Device) {
 
-	log.Info("Device is running")
+	var indexArray = []string{"0", "1", "2", "3"}
+	for _, index := range indexArray {
+		dev.LightUp(index, "blue")
+		time.Sleep(300 * time.Millisecond)
+	}
 
-	portName := "/dev/ttyACM2"
+	time.Sleep(500 * time.Millisecond)
+}
+
+func Setup(c config.Config) error {
+
+	log.Info("Device is setting up")
 
 	config := &serial.Config{
-		Name:        portName,
-		Baud:        9600, // Set the baud rate according to your device's specifications.
+		Name:        c.Device.Name,
+		Baud:        c.Device.Baud, // Set the baud rate according to your device's specifications.
 		ReadTimeout: time.Second,
 	}
+
+	log.Info("Device baud rate is ", c.Device.Baud)
+	log.Info("Device tty is ", c.Device.Name)
 
 	port, err := serial.OpenPort(config)
 	if err != nil {
 		log.Fatal(err)
 		return err
 	}
-	defer port.Close()
 
-	// 0 LED - cpp check,
-	lightUp(port, "0", "blue")
-
-	time.Sleep(300 * time.Millisecond)
-
-	lightUp(port, "1", "blue")
-
-	time.Sleep(300 * time.Millisecond)
-
-	lightUp(port, "2", "blue")
-
-	time.Sleep(300 * time.Millisecond)
-
-	lightUp(port, "3", "blue")
-	/*
-	 *    go func(failed bool) {
-	 *        blink(port, 30, "2", failed)
-	 *    }(false)
-	 *
-	 *    go func(failed bool) {
-	 *        blink(port, 30, "3", failed)
-	 *    }(true)
-	 */
-
-	// main loop
-	for {
-		time.Sleep(1 * time.Second)
+	device = Device{
+		Tty:  c.Device.Name,
+		Boud: c.Device.Baud,
+		Port: port,
 	}
 
-	//return errors.New("device is not running")
+	return nil
+}
+
+func Run() error {
+
+	log.Info("Device is running")
+
+	blinkTest(&device)
+	return nil
 }

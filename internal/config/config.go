@@ -7,8 +7,16 @@ type Config struct {
 	} `mapstructure:"general"`
 
 	Device struct {
-		Tty string `mapstructure:"tty"`
+		Name string `mapstructure:"name"`
+		Baud int    `mapstructure:"baud"`
 	} `mapstructure:"device"`
+
+	Project struct {
+		Directory string `mapstructure:"directory"`
+		Preset    string `mapstructure:"preset"`
+		Cores     int    `mapstructure:"cores"`
+		Plugins   string `mapstructure:"plugins"`
+	} `mapstructure:"project"`
 }
 
 var C Config

@@ -2,7 +2,8 @@ package cmd
 
 import (
 	"bytes"
-	"io/ioutil"
+	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"reflect"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/sigidagi/skystatus/internal/config"
 	"github.com/sigidagi/skystatus/internal/device"
+	"github.com/sigidagi/skystatus/internal/runners"
 
 	log "github.com/sirupsen/logrus"
 
@@ -22,11 +24,11 @@ var cfgFile string // config file
 var version string
 
 var rootCmd = &cobra.Command{
-	Use:   "hub-websocket",
-	Short: "WebSocket server for matter devices",
-	Long: `WebSocket server for matter devices. 
+	Use:   "skystatus",
+	Short: "SkyStatus: project status for IUI developers ",
+	Long: `SkyStatus: project status for IUI developers . 
 	> documentation & support: https://www.skyaalborg.io/
-	> source & copyright information: https://skyaalborg.io/hub-websocket`,
+	> source & copyright information: https://skyaalborg.io/skystatus`,
 	RunE: run,
 }
 
@@ -49,7 +51,7 @@ func Execute(v string) {
 
 func initConfig() {
 	if cfgFile != "" {
-		b, err := ioutil.ReadFile(cfgFile)
+		b, err := os.ReadFile(cfgFile)
 		if err != nil {
 			log.WithError(err).WithField("config", cfgFile).Fatal("error loading config file")
 		}
@@ -95,7 +97,10 @@ func run(cmd *cobra.Command, args []string) error {
 	tasks := []func() error{
 		printStartMessage,
 		setLogLevel,
-		runServer,
+		setupDevice,
+		runTest,
+		setupRunners,
+		runProject,
 	}
 
 	for _, t := range tasks {
@@ -125,9 +130,30 @@ func setLogLevel() error {
 	return nil
 }
 
-func runServer() error {
+func setupDevice() error {
+	if err := device.Setup(config.C); err != nil {
+		return errors.New(fmt.Sprintf("Device setup error: '%s'", err.Error()))
+	}
+	return nil
+}
+
+func setupRunners() error {
+	if err := runners.Setup(config.C); err != nil {
+		return errors.New(fmt.Sprintf("Runners setup error: '%s'", err.Error()))
+	}
+	return nil
+}
+
+func runTest() error {
 
 	if err := device.Run(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func runProject() error {
+	if err := runners.Run(); err != nil {
 		return err
 	}
 	return nil
